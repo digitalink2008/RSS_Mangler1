@@ -59,6 +59,7 @@ class MyRSSFeed:
     FeedProtocol = ""
     ItemCount = 0
     ItemFilter = []
+    PublishLocation = ""
 
 
     def importrssfeed(self, feedurl):

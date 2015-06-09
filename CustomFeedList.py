@@ -1,5 +1,7 @@
 __author__ = 'Dman'
 from RSS_Mangler_Core import MyRSSFeed
+PublishDir = "c:\\storage\\Dropbox\\RSSFiles\\"
+
 
 # ===========================================================================================
 # INSPARATION GRID
@@ -29,6 +31,8 @@ class FandomPost_Feed(MyRSSFeed):
 # DEVIANT ART REFORMATTED
 # ===========================================================================================
 class DeviantArt_Feed(MyRSSFeed):
+    counter = 0
+
     def docustomstuff(self):
         #self.absorbfeed("http://backend.deviantart.com/rss.xml?q=boost:popular%20in:photography/nature/domestic%20max_age:744h&type=deviation")
         #self.absorbfeed("http://backend.deviantart.com/rss.xml?q=boost:popular%20max_age:744h%20devil&type=deviation")
@@ -40,8 +44,8 @@ class DeviantArt_Feed(MyRSSFeed):
         #self.absorbfeed("http://backend.deviantart.com/rss.xml?q=boost:popular%20in:digitalart/paintings/scifi%20max_age:744h&type=deviation")
         #self.absorbfeed("http://backend.deviantart.com/rss.xml?q=boost:popular%20in:digitalart/paintings/fantasy%20max_age:744h&type=deviation")
         #self.FeedDescription = "Feed items = " + str(self.ItemCount)
-        for ix1 in self.RSSInput.entries:
-            self.includefullimages()
+        #for ix1 in self.RSSInput.entries:
+        self.includefullimages()
 
     def beforewritetofile(self):
         for ix1 in self.RSSOutput.items:
@@ -58,30 +62,54 @@ class DeviantArt_Feed(MyRSSFeed):
 
     # lets put the real images into the rss feed for deviant art as well
     def includefullimages(self):
+        self.counter += 1
         # fi needs to by of type feedparser.entries[i]
         for fi in self.RSSInput.entries:
             if not (hasattr(fi, "media_content")):
                 return
+
+            print("image url")
             img = fi.media_content[0]['url']
-            fi.summary = '<img src="' + str(img) + '">' + fi.summary
+            print(img)
+
+            print("image url with html")
+            img = ('<img src="' + str(img) + '">')
+            print(img)
+
+            print("description before any modification")
+            print(fi.description)
+
+            print("image html with summary")
+            img = (img + fi.description)
+            print(img)
+
+            print("summary before edits")
+            print(fi.description)
+
+            fi.description = img
+
+            print("summary after edits")
+            print(fi.description)
+            i = 1
+
 
 o2 = FandomPost_Feed()
 o2.FeedTitle = "FandomPost"
-o2.OutPutFile="E:\downloads\dropbox\RSSfiles\\fandompost.xml"
+o2.OutPutFile = PublishDir + "fandompost.xml"
 o2.importrssfeed("http://www.fandompost.com/feed/")
 o2.docustomstuff()
 o2.WriteRSSFile()
 
 o1 = InsparationGrid_Feed()
 o1.FeedTitle="Testing"
-o1.OutPutFile="E:\downloads\Dropbox\RSSFiles\\rsstest.xml"
+o1.OutPutFile = PublishDir + "rsstest.xml"
 o1.importrssfeed("http://theinspirationgrid.com/feed/")
 o1.docustomstuff()
 o1.WriteRSSFile()
 
 o3 = DeviantArt_Feed()
 o3.FeedTitle="DA Test"
-o3.OutPutFile="E:\downloads\Dropbox\RSSFiles\\DeviantArt.xml"
+o3.OutPutFile = PublishDir + "DeviantArt.xml"
 o3.importrssfeed("http://backend.deviantart.com/rss.xml?q=boost:popular%20max_age:168h%20baphomet&type=deviation")
 o3.docustomstuff()
 o3.WriteRSSFile()

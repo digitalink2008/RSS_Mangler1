@@ -8,45 +8,62 @@ _generator_name = __name__ + "-" + ".".join(map(str, __version__))
 import feedparser
 import PyRSS2Gen
 import shutil
-
+# ===========================================================================================
+# FeedItem2RSSItem
+#
+# This is the translator from the feedparser class to the PyRSS2Gen class structure
+# ===========================================================================================
 class FeedItem2RSSItem:
     def GetRSSItem(self, feeditem):
+        # Re-Format item tags
         clist = []
         i = 0
         for ix1 in feeditem.tags:
             clist.append(feeditem.tags[i].term)
             i += 1
 
-        # decide what to use as the description element
-        if feeditem.content[0].type == "text/html":
-            d = feeditem.content[0].value
-        else:
-            d = feeditem.description
+        # at the time the conversion from feeditem to RSSoutput is done i everything you want in
+        # the body of the RSS item needs to be in the description field. Its just much cleaner
+        # and less confusing that way. To handle things like content in the media_content field
+        # do that in an instance of MYRSSFeed's custom functions
+        d = feeditem.description
 
+        self.validate_fields(feeditem)
+
+        r = PyRSS2Gen.RSSItem(
+            title=feeditem.title,
+            guid=feeditem.id,
+            description=d,
+            author= feeditem.author,
+            categories=clist,
+            comments= feeditem.comments,
+            link=feeditem.link,
+            pubDate=feeditem.published,
+        )
+        return r
+
+    def validate_fields(self, feeditem):
         # test for author
         if hasattr(feeditem, 'author'):
             a = feeditem.author
         else:
             a = "NoAuthor"
+        feeditem.author = a
 
         # test for comments
         if hasattr(feeditem, 'comments'):
             c = feeditem.comments
         else:
             c = ""
+        feeditem.comments = c
 
-        r = PyRSS2Gen.RSSItem(
-            title=feeditem.title,
-            guid=feeditem.id,
-            description=d,
-            author=a,
-            categories=clist,
-            comments=c,
-            link=feeditem.link,
-            pubDate=feeditem.published,
-        )
-        return r
 
+# ===========================================================================================
+# MyRSSFeed
+#
+# This class represents a whole RSS feed. It contains a set of RSS items within both the
+#   RSSInput and RSSOutput objects
+# ===========================================================================================
 class MyRSSFeed:
     RSSInput = None
     RSSOutput = None
@@ -114,4 +131,74 @@ class MyRSSFeed:
     def docustomstuff(self):
         i = 1
         # placeholder
+
+# ===========================================================================================
+# ImageItem Class
+#
+# just helps reduce my errors when coding html tags
+# ===========================================================================================
+class ImageItem:
+
+    ImageURL = ""
+
+    def __init__(self, url):
+        self.ImageURL = url
+
+    def get_html_img(self):
+        return '<img src="' + self.ImageURL + '">'
+
+    def get_img_with_div(self):
+        return "<div>" + self.get_html_img() + "</div>"
+
+    def get_img_with_P(self):
+        return "<P>" + self.get_html_img() + "</P>"
+
+# ===========================================================================================
+# PinButton Class
+#
+# for adding a Pinterest button to stuff!
+# ===========================================================================================
+class PinButton:
+    imgclass = "pin-it-button"
+    pinbutton = "http://pinterest.com/pin/create/button/?"
+    url = ""
+    media = ""
+    description = ""
+    rel = "nofollow"
+    target = "_blank"
+    imgborder = "0"
+    buttonimg = "http://assets.pinterest.com/images/PinExt.png"
+    title = "Pin It"
+
+    def __init__(self, url, media, description):
+        self.url = url
+        self.media = media
+        self.description = description
+
+    def get_pinbutton(self):
+        html = ""
+        # add button class
+        html = html + '<a class="' + self.imgclass + '" '
+        # add pinterest link
+        html = html + 'href="' + self.pinbutton
+        # add page link
+        html = html + 'url=' + self.url + '&'
+        # add image link
+        html = html + 'media=' + self.media + '&'
+        # add image description
+        html = html + 'description=' + self.description + '" '
+        # add rel
+        html = html + 'rel="' + self.rel + '" '
+        # add target
+        html = html + 'target="' + self.target + '">'
+        # start adding pin button image
+        html = html + '<img border="' + self.imgborder + '" '
+        # link to pin button image
+        html = html + 'src="' + self.buttonimg + '" '
+        # add button title
+        html = html + 'title="' + self.title + '">   '
+        # add text to button
+        html = html + 'Pin-It</a>'
+        # done
+        return html
 

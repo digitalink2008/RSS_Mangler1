@@ -1,5 +1,7 @@
 __author__ = 'Dman'
 from RSS_Mangler_Core import MyRSSFeed
+from RSS_Mangler_Core import ImageItem
+from RSS_Mangler_Core import PinButton
 PublishDir = "c:\\storage\\Dropbox\\RSSFiles\\"
 
 
@@ -32,20 +34,25 @@ class FandomPost_Feed(MyRSSFeed):
 # ===========================================================================================
 class DeviantArt_Feed(MyRSSFeed):
     counter = 0
+    AddMoreFeeds = 1
 
     def docustomstuff(self):
-        #self.absorbfeed("http://backend.deviantart.com/rss.xml?q=boost:popular%20in:photography/nature/domestic%20max_age:744h&type=deviation")
-        #self.absorbfeed("http://backend.deviantart.com/rss.xml?q=boost:popular%20max_age:744h%20devil&type=deviation")
-        #self.absorbfeed("http://backend.deviantart.com/rss.xml?q=boost:popular%20max_age:744h%20shiba&type=deviation")
-        #self.absorbfeed("http://backend.deviantart.com/rss.xml?q=boost:popular%20in:digitalart/paintings%20max_age:744h&type=deviation")
-        #self.absorbfeed("http://backend.deviantart.com/rss.xml?q=boost:popular%20in:photography/horror%20max_age:744h&type=deviation")
-        #self.absorbfeed("http://backend.deviantart.com/rss.xml?q=boost:popular%20max_age:744h%20warhammer&type=deviation")
-        #self.absorbfeed("http://backend.deviantart.com/rss.xml?q=boost:popular%20in:digitalart/paintings/macabre%20max_age:744h&type=deviation")
-        #self.absorbfeed("http://backend.deviantart.com/rss.xml?q=boost:popular%20in:digitalart/paintings/scifi%20max_age:744h&type=deviation")
-        #self.absorbfeed("http://backend.deviantart.com/rss.xml?q=boost:popular%20in:digitalart/paintings/fantasy%20max_age:744h&type=deviation")
-        #self.FeedDescription = "Feed items = " + str(self.ItemCount)
-        #for ix1 in self.RSSInput.entries:
-        self.includefullimages()
+        if self.AddMoreFeeds:
+            self.add_more_feeds()
+        for ix1 in self.RSSInput.entries:
+            self.append_full_image_to_description(ix1)
+        self.FeedDescription = "Feed items = " + str(self.GetFeedCount())
+
+    def add_more_feeds(self):
+        self.absorbfeed("http://backend.deviantart.com/rss.xml?q=boost:popular%20in:photography/nature/domestic%20max_age:744h&type=deviation")
+        self.absorbfeed("http://backend.deviantart.com/rss.xml?q=boost:popular%20max_age:744h%20devil&type=deviation")
+        self.absorbfeed("http://backend.deviantart.com/rss.xml?q=boost:popular%20max_age:744h%20shiba&type=deviation")
+        self.absorbfeed("http://backend.deviantart.com/rss.xml?q=boost:popular%20in:digitalart/paintings%20max_age:744h&type=deviation")
+        self.absorbfeed("http://backend.deviantart.com/rss.xml?q=boost:popular%20in:photography/horror%20max_age:744h&type=deviation")
+        self.absorbfeed("http://backend.deviantart.com/rss.xml?q=boost:popular%20max_age:744h%20warhammer&type=deviation")
+        self.absorbfeed("http://backend.deviantart.com/rss.xml?q=boost:popular%20in:digitalart/paintings/macabre%20max_age:744h&type=deviation")
+        self.absorbfeed("http://backend.deviantart.com/rss.xml?q=boost:popular%20in:digitalart/paintings/scifi%20max_age:744h&type=deviation")
+        self.absorbfeed("http://backend.deviantart.com/rss.xml?q=boost:popular%20in:digitalart/paintings/fantasy%20max_age:744h&type=deviation")
 
     def beforewritetofile(self):
         for ix1 in self.RSSOutput.items:
@@ -61,36 +68,33 @@ class DeviantArt_Feed(MyRSSFeed):
         fi.categories = clist
 
     # lets put the real images into the rss feed for deviant art as well
-    def includefullimages(self):
-        self.counter += 1
-        # fi needs to by of type feedparser.entries[i]
-        for fi in self.RSSInput.entries:
-            if not (hasattr(fi, "media_content")):
-                return
+    def append_full_image_to_description(self, RSSitem):
+        if not (hasattr(RSSitem, "media_content")):
+            return
 
-            print("image url")
-            img = fi.media_content[0]['url']
-            print(img)
+        # add in the thumbnail
+        if not(hasattr(RSSitem, "media_thumbnail")):
+            i1 = ImageItem("")
+        else:
+            i1 = ImageItem(RSSitem.media_thumbnail[-1]["url"])
+        thm = i1.get_img_with_div()
 
-            print("image url with html")
-            img = ('<img src="' + str(img) + '">')
-            print(img)
+        # add in the full res image
+        if not(hasattr(RSSitem, "media_content")):
+            i2 = ImageItem("")
+        else:
+            i2 = ImageItem(RSSitem.media_content[0]["url"])
+        img = i2.get_img_with_div()
 
-            print("description before any modification")
-            print(fi.description)
+        # add in a pin button
+        p = PinButton( RSSitem.link,
+                       i2.ImageURL,
+                       RSSitem.media_credit[0]["content"])
+        p = '<div>' + p.get_pinbutton() + '</div>'
 
-            print("image html with summary")
-            img = (img + fi.description)
-            print(img)
+        # new description will be thumbnail + body + full res image
+        RSSitem.description = thm + p + RSSitem.description + img
 
-            print("summary before edits")
-            print(fi.description)
-
-            fi.description = img
-
-            print("summary after edits")
-            print(fi.description)
-            i = 1
 
 
 o2 = FandomPost_Feed()

@@ -8,6 +8,9 @@ _generator_name = __name__ + "-" + ".".join(map(str, __version__))
 import feedparser
 import PyRSS2Gen
 import shutil
+import urllib2_file
+from bs4 import BeautifulSoup
+
 # ===========================================================================================
 # FeedItem2RSSItem
 #
@@ -16,11 +19,15 @@ import shutil
 class FeedItem2RSSItem:
     def GetRSSItem(self, feeditem):
         # Re-Format item tags
-        clist = []
-        i = 0
-        for ix1 in feeditem.tags:
-            clist.append(feeditem.tags[i].term)
-            i += 1
+        # shouldnt assume tags are present tho i gues
+        if hasattr(feeditem, "tags"):
+            clist = []
+            i = 0
+            for ix1 in feeditem.tags:
+                clist.append(feeditem.tags[i].term)
+                i += 1
+        else:
+            clist = []
 
         # at the time the conversion from feeditem to RSSoutput is done i everything you want in
         # the body of the RSS item needs to be in the description field. Its just much cleaner
@@ -40,6 +47,14 @@ class FeedItem2RSSItem:
             link=feeditem.link,
             pubDate=feeditem.published,
         )
+        if hasattr(feeditem, 'media_rating'):
+            r.rating = feeditem.media_rating["content"]
+        else:
+            r.rating = "no rating"
+        if hasattr(feeditem, "tags"):
+            r.label = feeditem.tags[0]["label"]
+        else:
+            r.label = ""
         return r
 
     def validate_fields(self, feeditem):
@@ -201,4 +216,19 @@ class PinButton:
         html = html + 'Pin-It</a>'
         # done
         return html
+
+# ===========================================================================================
+# htmlpage Class
+#
+# using beautiful soup 4 for screen scraping
+# ===========================================================================================
+class htmlpage:
+    page = ""
+    url = ""
+
+    def __init__(self, url):
+        self.url = url
+        req = urllib2.Request(url)
+        res = urllib2.urlopen(req)
+        self.page = res.read()
 
